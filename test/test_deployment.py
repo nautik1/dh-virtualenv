@@ -23,10 +23,10 @@ import shutil
 import tempfile
 import textwrap
 import contextlib
+import pytest
 
-from mock import patch, call, ANY
+from unittest.mock import patch, call, ANY
 
-from nose.tools import eq_
 from dh_virtualenv import Deployment
 from dh_virtualenv.cmdline import get_default_parser
 
@@ -74,34 +74,35 @@ def create_new_style_shebang(executable):
     return shebang
 
 
-def test_shebangs_fix():
+@pytest.mark.parametrize("interpreter", ['python', 'pypy', 'ipy', 'jython'])
+def test_shebangs_fix(interpreter):
     """Generate a test for each possible interpreter"""
-    for interpreter in ('python', 'pypy', 'ipy', 'jython'):
-        yield check_shebangs_fix, interpreter, '/opt/venvs/test'
+    check_shebangs_fix(interpreter, '/opt/venvs/test')
 
 
-def test_shebangs_fix_overridden_root():
+@pytest.mark.parametrize("interpreter", ['python', 'pypy', 'ipy', 'jython'])
+def test_shebangs_fix_overridden_root(interpreter):
     """Generate a test for each possible interpreter while overriding root"""
     with patch.dict(os.environ, {'DH_VIRTUALENV_INSTALL_ROOT': 'foo'}):
-        for interpreter in ('python', 'pypy', 'ipy', 'jython'):
-            yield check_shebangs_fix, interpreter, 'foo/test'
+        check_shebangs_fix(interpreter, 'foo/test')
 
 
-def test_shebangs_fix_special_chars_in_path():
+@pytest.mark.parametrize("interpreter", ['python', 'pypy', 'ipy', 'jython'])
+def test_shebangs_fix_special_chars_in_path(interpreter):
     """Shebang fix: Don't trip on special characters in path"""
     with patch.dict(
         os.environ,
-        {'DH_VIRTUALENV_INSTALL_ROOT': 'some-directory:with/special_chars'}):
-        for interpreter in ('python', 'pypy', 'ipy', 'jython'):
-            yield (check_shebangs_fix, interpreter,
-                   'some-directory:with/special_chars/test')
+        {'DH_VIRTUALENV_INSTALL_ROOT': 'some-directory:with/special_chars'}
+    ):
+        check_shebangs_fix(interpreter,
+                           'some-directory:with/special_chars/test')
 
 
 def test_shebangs_fix_new_pip_with_over_127_chars():
     """Shebang fix: Handle new pip with long shebangs"""
     with patch.dict(
         os.environ,
-        {'DH_VIRTUALENV_INSTALL_ROOT': 127 * 'p'}):
+            {'DH_VIRTUALENV_INSTALL_ROOT': 127 * 'p'}):
         check_shebangs_fix_on_new_pip(127 * 'p' + '/test')
 
 
@@ -121,7 +122,7 @@ def check_shebangs_fix(interpreter, path):
     deployment.fix_shebangs()
 
     with open(temp.name) as f:
-        eq_(f.read(), expected_shebang)
+        assert f.read() == expected_shebang
 
     with open(temp.name, 'w') as f:
         f.write('#!/usr/bin/env {0}\n'.format(interpreter))
@@ -129,7 +130,7 @@ def check_shebangs_fix(interpreter, path):
     deployment.fix_shebangs()
 
     with open(temp.name) as f:
-        eq_(f.readline(), expected_shebang)
+        assert f.readline() == expected_shebang
 
     with open(temp.name, 'w') as f:
         f.write('#!{0}\n'.format(interpreter))
@@ -137,7 +138,7 @@ def check_shebangs_fix(interpreter, path):
     deployment.fix_shebangs()
 
     with open(temp.name) as f:
-        eq_(f.readline(), expected_shebang)
+        assert f.readline() == expected_shebang
 
     # Additional test to check for paths wrapped in quotes because they contained space
     # Example:
@@ -152,7 +153,7 @@ def check_shebangs_fix(interpreter, path):
     deployment.fix_shebangs()
 
     with open(temp.name) as f:
-        eq_(f.readline(), expected_shebang)
+        assert f.readline() == expected_shebang
 
 
 def check_shebangs_fix_on_new_pip(path):
@@ -175,7 +176,7 @@ def check_shebangs_fix_on_new_pip(path):
     deployment.fix_shebangs()
 
     with open(temp.name) as f:
-        eq_(f.read(), expected_shebang)
+        assert f.read() == expected_shebang
 
 
 @patch('os.path.exists', lambda x: False)
@@ -264,7 +265,7 @@ def test_custom_pip_tool_used_for_installation(callmock, _):
 def test_create_venv(callmock):
     d = Deployment('test')
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', TEST_VENV_PATH])
 
 
@@ -273,7 +274,7 @@ def test_create_venv(callmock):
 def test_create_venv_with_verbose(callmock):
     d = Deployment('test', verbose=True)
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', '--verbose', TEST_VENV_PATH])
 
 
@@ -282,12 +283,12 @@ def test_create_venv_with_verbose(callmock):
 def test_create_venv_with_extra_urls(callmock):
     d = Deployment('test', extra_urls=['foo', 'bar'])
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', TEST_VENV_PATH])
-    eq_([PY_CMD, PIP_CMD], d.pip_prefix)
-    eq_(['install', '--extra-index-url=foo',
+    assert [PY_CMD, PIP_CMD] == d.pip_prefix
+    assert ['install', '--extra-index-url=foo',
          '--extra-index-url=bar',
-         LOG_ARG], d.pip_args)
+         LOG_ARG] == d.pip_args
 
 
 @patch('tempfile.NamedTemporaryFile', FakeTemporaryFile)
@@ -295,7 +296,7 @@ def test_create_venv_with_extra_urls(callmock):
 def test_create_venv_with_extra_virtualenv(callmock):
     d = Deployment('test', extra_virtualenv_arg=["--never-download"])
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', '--never-download', TEST_VENV_PATH])
 
 
@@ -305,14 +306,14 @@ def test_create_venv_with_custom_index_url(callmock):
     d = Deployment('test', extra_urls=['foo', 'bar'],
                    index_url='http://example.com/simple')
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', TEST_VENV_PATH])
-    eq_([PY_CMD, PIP_CMD], d.pip_prefix)
-    eq_(['install',
+    assert [PY_CMD, PIP_CMD] == d.pip_prefix
+    assert ['install',
          '--index-url=http://example.com/simple',
          '--extra-index-url=foo',
          '--extra-index-url=bar',
-         LOG_ARG], d.pip_args)
+         LOG_ARG] == d.pip_args
 
 
 @patch('tempfile.NamedTemporaryFile', FakeTemporaryFile)
@@ -321,10 +322,10 @@ def test_create_venv_with_extra_pip_arg(callmock):
     d = Deployment('test', extra_pip_arg=['--no-compile'])
     d.create_virtualenv()
     d.install_dependencies()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', TEST_VENV_PATH])
-    eq_([PY_CMD, PIP_CMD], d.pip_prefix)
-    eq_(['install', LOG_ARG, '--no-compile'], d.pip_args)
+    assert [PY_CMD, PIP_CMD] == d.pip_prefix
+    assert ['install', LOG_ARG, '--no-compile'] == d.pip_args
 
 
 @patch('tempfile.NamedTemporaryFile', FakeTemporaryFile)
@@ -332,10 +333,10 @@ def test_create_venv_with_extra_pip_arg(callmock):
 def test_create_venv_with_setuptools(callmock):
     d = Deployment('test', setuptools=True)
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', '--setuptools', TEST_VENV_PATH])
-    eq_([PY_CMD, PIP_CMD], d.pip_prefix)
-    eq_(['install', LOG_ARG], d.pip_args)
+    assert [PY_CMD, PIP_CMD] == d.pip_prefix
+    assert ['install', LOG_ARG] == d.pip_args
 
 
 @patch('tempfile.NamedTemporaryFile', FakeTemporaryFile)
@@ -343,11 +344,11 @@ def test_create_venv_with_setuptools(callmock):
 def test_create_venv_with_system_packages(callmock):
     d = Deployment('test', use_system_packages=True)
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', '--system-site-packages',
                                  TEST_VENV_PATH])
-    eq_([PY_CMD, PIP_CMD], d.pip_prefix)
-    eq_(['install', LOG_ARG], d.pip_args)
+    assert [PY_CMD, PIP_CMD] == d.pip_prefix
+    assert ['install', LOG_ARG] == d.pip_args
 
 
 @patch('tempfile.NamedTemporaryFile', FakeTemporaryFile)
@@ -355,10 +356,10 @@ def test_create_venv_with_system_packages(callmock):
 def test_venv_with_custom_python(callmock):
     d = Deployment('test', python='/tmp/python')
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(['virtualenv', '--python', '/tmp/python', TEST_VENV_PATH])
-    eq_([PY_CMD, PIP_CMD], d.pip_prefix)
-    eq_(['install', LOG_ARG], d.pip_args)
+    assert [PY_CMD, PIP_CMD] == d.pip_prefix
+    assert ['install', LOG_ARG] == d.pip_args
 
 
 @patch('tempfile.NamedTemporaryFile', FakeTemporaryFile)
@@ -369,7 +370,7 @@ def test_create_builtin_venv_with_unsupported_options(callmock):
         builtin_venv=True, setuptools=True, verbose=True
     )
     d.create_virtualenv()
-    eq_(TEST_VENV_PATH, d.package_dir)
+    assert TEST_VENV_PATH == d.package_dir
     callmock.assert_called_with(
         ['python_interpreter', '-m', 'venv', TEST_VENV_PATH]
     )
@@ -414,7 +415,7 @@ def test_fix_activate_path():
         deployment.fix_activate_path()
 
     with open(temp.name) as fh:
-        eq_(expected, fh.read())
+        assert expected == fh.read()
 
 
 @patch('os.path.exists', lambda x: True)
@@ -460,7 +461,7 @@ def test_testrunner(callmock):
 def test_testrunner_setuppy_not_found(callmock):
     d = Deployment('test')
     d.run_tests()
-    eq_(callmock.call_count, 0)
+    assert callmock.call_count == 0
 
 
 @patch('tempfile.NamedTemporaryFile', FakeTemporaryFile)
@@ -470,8 +471,8 @@ def test_deployment_from_options():
             '-O--pypi-url', 'http://example.org'
         ])
         d = Deployment.from_options('foo', options)
-        eq_(d.package, 'foo')
-        eq_(d.pip_args,
+        assert d.package == 'foo'
+        assert (d.pip_args ==
             ['install', '--index-url=http://example.org',
              '--extra-index-url=http://example.com', LOG_ARG])
 
@@ -481,8 +482,8 @@ def test_deployment_from_options_with_verbose():
             '--verbose'
         ])
         d = Deployment.from_options('foo', options)
-        eq_(d.package, 'foo')
-        eq_(d.verbose, True)
+        assert d.package == 'foo'
+        assert d.verbose == True
 
 
 @patch('os.environ.get')
@@ -490,81 +491,76 @@ def test_deployment_from_options_with_verbose_from_env(env_mock):
         env_mock.return_value = '1'
         options, _ = get_default_parser().parse_args([])
         d = Deployment.from_options('foo', options)
-        eq_(d.package, 'foo')
-        eq_(d.verbose, True)
+        assert d.package == 'foo'
+        assert d.verbose == True
 
 
-@temporary_dir
-def test_fix_local_symlinks(deployment_dir):
+def test_fix_local_symlinks(tmp_path):
         d = Deployment('testing')
-        d.package_dir = deployment_dir
+        d.package_dir = tmp_path
 
-        local = os.path.join(deployment_dir, 'local')
+        local = os.path.join(tmp_path, 'local')
         os.makedirs(local)
-        target = os.path.join(deployment_dir, 'sometarget')
+        target = os.path.join(tmp_path, 'sometarget')
         symlink = os.path.join(local, 'symlink')
         os.symlink(target, symlink)
 
         d.fix_local_symlinks()
-        eq_(os.readlink(symlink), '../sometarget')
+        assert os.readlink(symlink) == '../sometarget'
 
 
-@temporary_dir
-def test_fix_local_symlinks_with_relative_links(deployment_dir):
+def test_fix_local_symlinks_with_relative_links(tmp_path):
         # Runs shouldn't ruin the already relative symlinks.
         d = Deployment('testing')
-        d.package_dir = deployment_dir
+        d.package_dir = tmp_path
 
-        local = os.path.join(deployment_dir, 'local')
+        local = os.path.join(tmp_path, 'local')
         os.makedirs(local)
         symlink = os.path.join(local, 'symlink')
         os.symlink('../target', symlink)
 
         d.fix_local_symlinks()
-        eq_(os.readlink(symlink), '../target')
+        assert os.readlink(symlink) == '../target'
 
 
-@temporary_dir
-def test_fix_local_symlinks_does_not_blow_up_on_missing_local(deployment_dir):
+def test_fix_local_symlinks_does_not_blow_up_on_missing_local(tmp_path):
         d = Deployment('testing')
-        d.package_dir = deployment_dir
+        d.package_dir = tmp_path
         d.fix_local_symlinks()
 
 
-@temporary_dir
-def test_find_script_files_normal_shebang(bin_dir):
+def test_find_script_files_normal_shebang(tmp_path):
     d = Deployment('testing')
-    d.bin_dir = bin_dir
+    d.bin_dir = tmp_path
 
-    script_files = [os.path.join(bin_dir, s) for s in
+    script_files = [os.path.join(tmp_path, s) for s in
                     ('s1', 's2', 's3')]
     for script in script_files:
-        with open(os.path.join(bin_dir, script), 'w') as f:
+        with open(os.path.join(tmp_path, script), 'w') as f:
             f.write('#!/usr/bin/python\n')
 
-    with open(os.path.join(bin_dir, 'n1'), 'w') as f:
+    with open(os.path.join(tmp_path, 'n1'), 'w') as f:
         f.write('#!/bin/bash')
 
     found_files = sorted(d.find_script_files())
-    eq_(found_files, script_files)
+    assert found_files == script_files
 
 
-@temporary_dir
-def test_find_script_files_long_shebang(bin_dir):
+def test_find_script_files_long_shebang(tmp_path):
     d = Deployment('testing')
-    d.bin_dir = bin_dir
+    d.bin_dir = tmp_path
 
-    script_files = [os.path.join(bin_dir, s) for s in
+    script_files = [os.path.join(tmp_path, s) for s in
                     ('s1', 's2', 's3')]
     for script in script_files:
-        with open(os.path.join(bin_dir, script), 'w') as f:
+        with open(os.path.join(tmp_path, script), 'w') as f:
             # It does not really matter what we write into the
             # exec statement as executable here
             f.write(
                 create_new_style_shebang('/usr/bin/python'))
 
-    with open(os.path.join(bin_dir, 'n1'), 'w') as f:
+    with open(os.path.join(tmp_path, 'n1'), 'w') as f:
         f.write('#!/bin/bash')
 
     found_files = sorted(d.find_script_files())
-    eq_(found_files, script_files)
+    assert found_files == script_files

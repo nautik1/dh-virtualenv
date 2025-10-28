@@ -22,8 +22,7 @@ import os
 import warnings
 
 from dh_virtualenv import cmdline
-from mock import patch
-from nose.tools import eq_, ok_
+from unittest.mock import patch
 
 
 def get_mocked_stderr():
@@ -42,29 +41,29 @@ def get_mocked_stderr():
 def test_unknown_argument_is_error(error_mock):
     parser = cmdline.DebhelperOptionParser(usage='foo')
     parser.parse_args(['-f'])
-    eq_(1, error_mock.call_count)
+    assert 1 == error_mock.call_count
 
 
 def test_test_debhelper_option_parsing():
     parser = cmdline.DebhelperOptionParser()
     parser.add_option('--sourcedirectory')
     opts, args = parser.parse_args(['-O--sourcedirectory', '/tmp'])
-    eq_('/tmp', opts.sourcedirectory)
-    eq_([], args)
+    assert '/tmp' == opts.sourcedirectory
+    assert [] == args
 
 
 def test_ignore_unknown_debhelper_options():
     parser = cmdline.DebhelperOptionParser()
     parser.add_option('-O')
     opts, args = parser.parse_args(['-O--buildsystem=none'])
-    eq_([], args)
+    assert [] == args
 
 
 def test_parser_picks_up_DH_OPTIONS_from_environ():
     with patch.dict(os.environ, {'DH_OPTIONS': '--sourcedirectory=/tmp/'}):
         parser = cmdline.get_default_parser()
         opts, args = parser.parse_args()
-        eq_('/tmp/', opts.sourcedirectory)
+        assert '/tmp/' == opts.sourcedirectory
 
 def test_get_default_parser():
     parser = cmdline.get_default_parser()
@@ -72,8 +71,8 @@ def test_get_default_parser():
         '-O--sourcedirectory', '/tmp/foo',
         '--extra-index-url', 'http://example.com'
     ])
-    eq_('/tmp/foo', opts.sourcedirectory)
-    eq_(['http://example.com'], opts.extra_index_url)
+    assert '/tmp/foo' == opts.sourcedirectory
+    assert ['http://example.com'] == opts.extra_index_url
 
 
 def test_pypi_url_creates_deprecation_warning():
@@ -86,9 +85,9 @@ def test_pypi_url_creates_deprecation_warning():
         parser.parse_args([
             '--pypi-url=http://example.com',
         ])
-    eq_(len(w), 1)
-    ok_(issubclass(w[0].category, DeprecationWarning))
-    eq_(str(w[0].message), 'Use of --pypi-url is deprecated. Use --index-url instead')
+    assert len(w) == 1
+    assert issubclass(w[0].category, DeprecationWarning)
+    assert str(w[0].message) == 'Use of --pypi-url is deprecated. Use --index-url instead'
 
 
 def test_no_test_creates_deprecation_warning():
@@ -97,9 +96,9 @@ def test_no_test_creates_deprecation_warning():
         parser.parse_args([
             '--no-test',
         ])
-    eq_(len(w), 1)
-    ok_(issubclass(w[0].category, DeprecationWarning))
-    eq_(str(w[0].message),
+    assert len(w) == 1
+    assert issubclass(w[0].category, DeprecationWarning)
+    assert (str(w[0].message) ==
         'Use of --no-test is deprecated and has no effect. '
         'Use --setuptools-test if you want to execute '
         '`setup.py test` during package build.')
@@ -114,7 +113,7 @@ def test_pypi_url_index_url_conflict(exit_):
             '--pypi-url=http://example.com',
             '--index-url=http://example.org']
         )
-    ok_('Deprecated --pypi-url and the new --index-url are mutually exclusive'
+    assert ('Deprecated --pypi-url and the new --index-url are mutually exclusive'
         in f.getvalue())
     exit_.assert_called_once_with(2)
 
@@ -128,7 +127,7 @@ def test_test_flag_conflict(exit_):
             '--no-test',
             '--setuptools-test']
         )
-    ok_('Deprecated --no-test and the new --setuptools-test are mutually '
+    assert ('Deprecated --no-test and the new --setuptools-test are mutually '
         'exclusive'
         in f.getvalue())
     exit_.assert_called_once_with(2)
@@ -143,7 +142,7 @@ def test_pypi_url_index_url_conflict_independent_from_order(exit_):
             '--index-url=http://example.org',
             '--pypi-url=http://example.com']
         )
-    ok_('Deprecated --pypi-url and the new --index-url are mutually exclusive'
+    assert ('Deprecated --pypi-url and the new --index-url are mutually exclusive'
         in f.getvalue())
     exit_.assert_called_once_with(2)
 
@@ -151,31 +150,31 @@ def test_pypi_url_index_url_conflict_independent_from_order(exit_):
 def test_that_default_test_option_should_be_false():
     parser = cmdline.get_default_parser()
     opts, args = parser.parse_args()
-    eq_(False, opts.setuptools_test)
+    assert False == opts.setuptools_test
 
 
 def test_that_test_option_can_be_true():
     parser = cmdline.get_default_parser()
     opts, args = parser.parse_args(['--setuptools-test'])
-    eq_(True, opts.setuptools_test)
+    assert True == opts.setuptools_test
 
 
 def test_that_no_test_option_has_no_effect():
     parser = cmdline.get_default_parser()
     opts, args = parser.parse_args(['--no-test'])
-    eq_(False, opts.setuptools_test)
+    assert False == opts.setuptools_test
 
 
 def test_that_default_use_system_packages_option_should_be_false():
     parser = cmdline.get_default_parser()
     opts, args = parser.parse_args()
-    eq_(False, opts.use_system_packages)
+    assert False == opts.use_system_packages
 
 
 def test_that_use_system_packages_option_can_be_true():
     parser = cmdline.get_default_parser()
     opts, args = parser.parse_args(['--use-system-packages'])
-    eq_(True, opts.use_system_packages)
+    assert True == opts.use_system_packages
 
 
 def test_builtin_venv_and_setuptools_conflict():
@@ -190,5 +189,5 @@ def test_builtin_venv_and_setuptools_conflict():
         with patch('sys.stderr', f), patch('sys.exit') as sysexit:
             parser = cmdline.get_default_parser()
             parser.parse_args(args)
-            ok_(error_message in f.getvalue())
+            assert error_message in f.getvalue()
             sysexit.assert_called_once_with(2)
