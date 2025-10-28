@@ -4,15 +4,15 @@
 
 # Developer tooling
 pip-upgrader
-invoke==0.13.0
-rituals==0.4.1
+invoke==2.2.1
+rituals==0.4.2
 #https://github.com/jhermann/rituals/archive/master.zip#egg=rituals
 
 # CI tooling
 -r travis-requirements.txt
 
 # Sphinx basics are in Travis requirements
-sphinx-autobuild==0.7.1
+sphinx-autobuild==2025.8.25
 
 # Add project itself
 -e .

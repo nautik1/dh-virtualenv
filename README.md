@@ -99,7 +99,7 @@ In the new sequence, `dh_virtualenv` is inserted right before `dh_installinit`.
 
 ## Running tests
 
-    $ nosetests ./test/test_deployment.py
+    $ pytest ./test/test_deployment.py
 
 
 ## Building the package in a Docker container
