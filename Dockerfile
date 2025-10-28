@@ -15,7 +15,7 @@ ENV DEB_BUILD_OPTIONS=${opts}
 RUN apt-get update -qq -o Acquire::Languages=none \
     && env DEBIAN_FRONTEND=noninteractive apt-get install \
         -yqq --no-install-recommends -o Dpkg::Options::=--force-unsafe-io \
-        build-essential debhelper devscripts equivs lsb-release libparse-debianchangelog-perl \
+        build-essential debhelper devscripts equivs lsb-release \
         python3 python3-setuptools python3-pip python3-dev \
         python3-sphinx python3-mock dh-exec dh-python python3-sphinx-rtd-theme \
     && if test "$(lsb_release -cs)" = 'bionic' ; then \
