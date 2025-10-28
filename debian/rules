@@ -25,6 +25,6 @@ override_dh_gencontrol:
 
 ifeq (,$(findstring nodoc, $(DEB_BUILD_OPTIONS)))
 override_dh_installdocs:
-	python3 setup.py build_sphinx
-	dh_installdocs doc/_build/html
+	sphinx-build -b html doc doc/_build
+	dh_installdocs doc/_build
 endif

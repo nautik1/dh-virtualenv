@@ -2,27 +2,33 @@ dh\_virtualenv package
 ======================
 
 .. automodule:: dh_virtualenv
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 Submodules
 ----------
 
-dh\_virtualenv\.cmdline module
-------------------------------
+dh\_virtualenv.cmdline module
+-----------------------------
 
 .. automodule:: dh_virtualenv.cmdline
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
-dh\_virtualenv\.deployment module
----------------------------------
+dh\_virtualenv.debhelper module
+-------------------------------
+
+.. automodule:: dh_virtualenv.debhelper
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+dh\_virtualenv.deployment module
+--------------------------------
 
 .. automodule:: dh_virtualenv.deployment
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
+   :members:
+   :show-inheritance:
+   :undoc-members:
