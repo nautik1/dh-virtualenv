@@ -180,6 +180,12 @@ def get_default_parser():
                       action='callback',
                       help='Run `setup.py test` when building the package',
                       callback=_check_for_deprecated_options)
+    parser.add_option('--use-pylock', action='store_true',
+                      dest='use_pylock',
+                      default=False,
+                      help="Look for a pep751 lock file to use "
+                           "for installing dependencies. Requires "
+                           "PDM v2.25+ in PATH")
 
     # Ignore user-specified option bundles
     parser.add_option('-O', help=SUPPRESS_HELP)
