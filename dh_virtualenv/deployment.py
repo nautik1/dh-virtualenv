@@ -27,6 +27,7 @@ ROOT_ENV_KEY = 'DH_VIRTUALENV_INSTALL_ROOT'
 DEFAULT_INSTALL_DIR = '/opt/venvs/'
 PYTHON_INTERPRETERS = ['python', 'pypy', 'ipy', 'jython']
 _PYTHON_INTERPRETERS_REGEX = r'\(' + r'\|'.join(PYTHON_INTERPRETERS) + r'\)'
+PYLOCK_PATTERN = r'^pylock\..*toml$'
 
 
 class Deployment(object):
@@ -50,6 +51,7 @@ class Deployment(object):
                  install_suffix=None,
                  requirements_filename='requirements.txt',
                  upgrade_pip_to='',
+                 use_pylock=False,
         ):
 
         self.package = package
@@ -105,6 +107,7 @@ class Deployment(object):
         self.pip_upgrade_args = self.pip_args[:]
         # Add in any user supplied pip args
         self.pip_args.extend(extra_pip_arg)
+        self.use_pylock = use_pylock
 
     @classmethod
     def from_options(cls, package, options):
@@ -128,6 +131,7 @@ class Deployment(object):
                    install_suffix=options.install_suffix,
                    requirements_filename=options.requirements_filename,
                    upgrade_pip_to=options.upgrade_pip_to,
+                   use_pylock=options.use_pylock,
                   )
 
     def clean(self):
@@ -181,6 +185,13 @@ class Deployment(object):
     def pip(self, *args):
         return self.pip_prefix + self.pip_args + list(args)
 
+    def find_pylock_file(self):
+        files = os.listdir(self.sourcedirectory)
+        for f in files:
+            if re.search(PYLOCK_PATTERN, f):
+                return True
+        return False
+
     def install_dependencies(self):
         # Install preinstall stage packages. This is handy if you need
         # a custom package to install dependencies (think something
@@ -197,9 +208,15 @@ class Deployment(object):
         if self.preinstall:
             subprocess.check_call(self.pip_preinstall(*self.preinstall))
 
-        requirements_path = os.path.join(self.sourcedirectory, self.requirements_filename)
-        if os.path.exists(requirements_path):
-            subprocess.check_call(self.pip('-r', requirements_path))
+        if self.use_pylock and self.find_pylock_file():
+            # Install dependencies using pdm
+            env = os.environ.copy()
+            env["PDM_PYTHON"] = self.venv_bin('python')
+            subprocess.check_call(['pdm', 'sync', '--production'], env=env)
+        else:
+            requirements_path = os.path.join(self.sourcedirectory, self.requirements_filename)
+            if os.path.exists(requirements_path):
+                subprocess.check_call(self.pip('-r', requirements_path))
 
     def run_tests(self):
         python = self.venv_bin('python')
